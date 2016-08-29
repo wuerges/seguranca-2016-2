@@ -1,7 +1,7 @@
 import argparse
 import sys
 import numpy
-from itertools import zip_longest, chain
+from itertools import zip_longest, chain, cycle
 from math import ceil
 
 
@@ -22,10 +22,16 @@ def transp_dec(k, d):
     kd = ceil(len(d) / ki)
     return transp_enc(kd, d)
 
+def vig_enc(k, d):
+    return bytes((b + a) % 256 for (a, b) in zip(cycle(k.encode()), d))
+
+def vig_dec(k, d):
+    return bytes((b - a + 256) % 256 for (a, b) in zip(cycle(k.encode()), d))
 
 ciphers = { \
         'ceasar': { 'e': ceasar_enc, 'd': ceasar_dec },
         'transp': { 'e': transp_enc, 'd': transp_dec },
+        'vig': { 'e': vig_enc, 'd': vig_dec },
         }
 
 parser = argparse.ArgumentParser()
