@@ -51,7 +51,7 @@ def generate_random_subs_key():
     shuffle(l)
     return dict(enumerate(l))
 
-# CAREFULL: if it doesn't find the file, it will create a new one with a random key
+# WARNING: if it doesn't find the file, it will create a new one with a random key
 def load_key(filename):
     try:
         with open(filename, 'rb') as f:
