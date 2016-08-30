@@ -58,6 +58,8 @@ def load_key(filename):
             k = f.read()
             return dict(enumerate(k))
     except FileNotFoundError:
+        print("WARNING: file <%s> not found. I will create a new random key and store it in <%s>" % (filename, filename), file=sys.stderr)
+
         rk = generate_random_subs_key()
         store_key(filename, rk)
         return rk
