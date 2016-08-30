@@ -3,47 +3,97 @@ import sys
 import numpy
 from itertools import zip_longest, chain, cycle
 from math import ceil
+from random import shuffle
+
+
+def int_key(func):
+    def w(k, d):
+        return func(int(k), d)
+    return w
+
+def word_key(func):
+    def w(k, d):
+        return func(k.encode(), d)
+    return w
 
 
 def ceasar_enc(k, d):
-    return bytes((x + int(k)) % 256 for x in d)
+    return bytes((x + k) % 256 for x in d)
 
 def ceasar_dec(k, d):
-    return ceasar_enc(int(k) * - 1, d)
+    return ceasar_enc(k * -1, d)
 
 def transp_enc(k, d):
-    ki = int(k)
-    m = [d[i:i+ki] for i in range(0, len(d), ki)]
+    m = [d[i:i+k] for i in range(0, len(d), k)]
     r = zip_longest(*m, fillvalue=0)
     return bytes(sum(r, ()))
 
 def transp_dec(k, d):
-    ki = int(k)
-    kd = ceil(len(d) / ki)
+    kd = ceil(len(d) / k)
     return transp_enc(kd, d)
 
 def vig_enc(k, d):
-    return bytes((b + a) % 256 for (a, b) in zip(cycle(k.encode()), d))
+    return bytes((b + a) % 256 for (a, b) in zip(cycle(k), d))
 
 def vig_dec(k, d):
-    return bytes((b - a + 256) % 256 for (a, b) in zip(cycle(k.encode()), d))
+    return vig_enc([-ki for ki in k], d)
 
-ciphers = { \
-        'ceasar': { 'e': ceasar_enc, 'd': ceasar_dec },
-        'transp': { 'e': transp_enc, 'd': transp_dec },
-        'vig': { 'e': vig_enc, 'd': vig_dec },
-        }
 
-parser = argparse.ArgumentParser()
-parser.add_argument("cipher")
-parser.add_argument("mode")
-parser.add_argument("key")
-args = parser.parse_args()
+# functions for substitution cipher
 
-d = sys.stdin.buffer.read()
+def generate_random_subs_key():
+    l = list(range(256))
+    shuffle(l)
+    return dict(enumerate(l))
 
-o = ciphers[args.cipher][args.mode](args.key, d)
+def load_key(filename):
+    try:
+        with open(filename, 'rb') as f:
+            k = f.read()
+            return dict(enumerate(k))
+    except FileNotFoundError:
+        rk = generate_random_subs_key()
+        store_key(filename, rk)
+        return rk
 
-sys.stdout.buffer.write(o)
+
+def store_key(filename, k):
+    with open(filename, 'wb') as f:
+        f.write(bytes(k.values()))
+
+def dict_key(func):
+    def w(k, d):
+        return func(load_key(k), d)
+    return w
+
+def subs_enc(k, d):
+    return bytes((k[x] for x in d))
+
+def reverse_subs_key(k):
+    return dict(((b,a) for (a, b) in k.items()))
+
+def subs_dec(k, d):
+    return subs_enc(reverse_subs_key(k), d)
+
+
+if __name__ == "__main__":
+    ciphers = { \
+            'ceasar': { 'e': int_key(ceasar_enc), 'd': int_key(ceasar_dec) },
+            'transp': { 'e': int_key(transp_enc), 'd': int_key(transp_dec) },
+            'vig'   : { 'e': word_key(vig_enc),   'd': word_key(vig_dec)   },
+            'subs'  : { 'e': dict_key(subs_enc),  'd': dict_key(subs_dec)  }
+            }
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("cipher")
+    parser.add_argument("mode")
+    parser.add_argument("key")
+    args = parser.parse_args()
+
+    d = sys.stdin.buffer.read()
+
+    o = ciphers[args.cipher][args.mode](args.key, d)
+
+    sys.stdout.buffer.write(o)
 
 
