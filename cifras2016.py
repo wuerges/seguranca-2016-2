@@ -1,6 +1,5 @@
 import argparse
 import sys
-import numpy
 from itertools import zip_longest, chain, cycle
 from math import ceil
 from random import shuffle

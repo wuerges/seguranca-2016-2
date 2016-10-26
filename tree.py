@@ -3,7 +3,6 @@ from bitarray import *
 def addprefixos(xs, p):
     return dict((k, bitarray(p) + v) for (k,v) in xs.items())
 
-
 class N:
     def __init__(self, x, f):
         self.x = x
